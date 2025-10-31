@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khinsider Scraper</title>
+    <link rel="stylesheet" href="src/renderer/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">
+                    <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18V5l12-2v13"></path>
+                        <circle cx="6" cy="18" r="3"></circle>
+                        <circle cx="18" cy="16" r="3"></circle>
+                    </svg>
+                    Khinsider Scraper
+                </h1>
+                <p class="app-subtitle">Download your favorite game soundtracks</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Search Section -->
+            <section class="search-section">
+                <div class="input-group">
+                    <input
+                        type="text" 
+                        id="searchInput" 
+                        class="search-input" 
+                        placeholder="Enter soundtrack URL or name..."
+                        autocomplete="off"
+                    >
+                    <button id="searchBtn" class="btn btn-primary">
+                        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        Search
+                    </button>
+                </div>
+            </section>
+
+            <!-- Progress Section -->
+            <section class="progress-section" id="progressSection" style="display: none;">
+                <div class="progress-header">
+                    <h3 class="progress-title">Download Progress</h3>
+                    <span id="progressText" class="progress-text">0 / 0</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="progressBar" class="progress-bar"></div>
+                </div>
+                <p id="currentFile" class="current-file"></p>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section">
+                <div class="results-header">
+                    <h2 class="section-title">Results</h2>
+                    <div class="results-actions">
+                        <button id="selectAllBtn" class="btn btn-secondary" disabled>Select All</button>
+                        <button id="downloadBtn" class="btn btn-success" disabled>
+                            <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Download Selected
+                        </button>
+                    </div>
+                </div>
+
+                <div class="results-container">
+                    <div class="empty-state">
+                        <svg class="empty-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 8v4M12 16h.01"></path>
+                        </svg>
+                        <p>No results yet. Start by searching for a soundtrack!</p>
+                    </div>
+
+                    <div id="resultsList" class="results-list"></div>
+                </div>
+            </section>
+
+            <!-- Status Section -->
+            <section class="status-section">
+                <div id="statusMessage" class="status-message"></div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        
+        <footer class="app-footer">
+            <p>Made with ♥ for VGM lovers</p>
+        </footer>
+    </div>
+
+    <script src="src/renderer/buttonFunctions.js"></script>
+</body>
+</html>
