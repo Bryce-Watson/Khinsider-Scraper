@@ -182,6 +182,16 @@ function updateDownloadButton() {
             </svg>
             Download Selected (${selectedTracks.size})
         `;
+    } else {
+        // Reset button text when nothing selected
+        downloadBtn.innerHTML = `
+            <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download Selected
+        `;
     }
 }
 
@@ -213,8 +223,27 @@ async function handleDownload() {
         );
         
         showStatus(`Download completed! ${result.downloaded} of ${result.total} tracks downloaded successfully.`, 'success');
+        
+        // Hide progress section after completion
+        setTimeout(() => {
+            progressSection.style.display = 'none';
+            // Reset progress bar for next download
+            progressBar.style.width = '0%';
+            progressText.textContent = '0 / 0';
+            currentFile.textContent = '';
+        }, 2000); // Wait 2 seconds so user can see completion
+        
     } catch (error) {
         showStatus(`Download failed: ${error.message}`, 'error');
+        
+        // Hide progress section after error
+        setTimeout(() => {
+            progressSection.style.display = 'none';
+            progressBar.style.width = '0%';
+            progressText.textContent = '0 / 0';
+            currentFile.textContent = '';
+        }, 2000);
+        
     } finally {
         downloadBtn.disabled = false;
         searchBtn.disabled = false;
