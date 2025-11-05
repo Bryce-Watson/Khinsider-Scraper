@@ -84,7 +84,7 @@ def extract_track_codes(script_content):
 
     # Look for codes that match the criteria
     # Pattern: 8 lowercase letters, followed by optional pipes, then 7 digits
-    pattern = r"\|([a-z]{8})\|+(?=\d+\|)"
+    pattern = r"\|([a-z]+)\|+(?=(?:[a-z]+\|)?\d+\|)"
     matches = re.findall(pattern, parts_after)
 
     # Extract just the codes (first group from each match)
