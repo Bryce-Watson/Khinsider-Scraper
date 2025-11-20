@@ -93,7 +93,6 @@ def extract_track_codes(script_content):
 
 def download_track(website_name, track_code, track_name, output_dir, realFileName):
     websiteLink = f"{linkHeader}{website_name}/{track_code}/{track_name.replace("%25", "%")}.mp3"
-    send_message("download", {"fileName": track_name, "link": websiteLink})
     
     try:
         response = requests.get(websiteLink, timeout=30)
@@ -132,65 +131,6 @@ def get_album_info(website_url):
         "tracks": tracks
     }
 
-def download_full_album(website_url, output_dir=None):
-    html_content = get_webpage_content(website_url)
-    websiteName = website_url.replace("https://downloads.khinsider.com/game-soundtracks/album/", "")
-    
-    if output_dir is None:
-        output_dir = websiteName
-    
-    if html_content:
-        script_elements = extract_scripts(html_content)
-        eval_script = find_eval_script(script_elements)
-        
-        if eval_script:
-            track_codes = extract_track_codes(eval_script)
-            track_url_names = extract_url_track_names(website_url)
-            track_names = extract_track_names(website_url)
-
-            send_message("info", {"total": track_url_names, "albumName": websiteName})
-            
-            if not track_codes:
-                send_message("error", "No track codes found")
-                return
-            
-            os.makedirs(output_dir, exist_ok=True)
-            
-            total_tracks = len(track_url_names)
-            finalFoundFiles = 0
-            used_codes = set()
-            
-            send_message("start", {"total": total_tracks, "albumName": websiteName})
-            
-            for i, track_name in enumerate(track_url_names):
-                found = False
-
-                for track_code in track_codes:
-                    if track_code in used_codes:
-                        continue
-                    
-                    finalTrackLink = download_track(websiteName, track_code, track_name, output_dir, track_names[i])
-                    
-                    if finalTrackLink:
-                        used_codes.add(track_code)
-                        finalFoundFiles += 1
-                        found = True
-                        send_message("progress", {
-                            "current": i + 1,
-                            "total": total_tracks,
-                            "fileName": track_name
-                        })
-                        break
-                
-                if not found:
-                    send_message("warning", f"Could not find working code for '{track_name}'")
-
-            send_message("complete", {"downloaded": finalFoundFiles, "total": total_tracks})
-        else:
-            send_message("error", "Could not find eval script")
-    else:
-        send_message("error", "Failed to fetch HTML content")
-
 def download_selected_tracks(website_url, track_indices, output_dir=None):
     """Download only selected tracks by their indices"""
     html_content = get_webpage_content(website_url)
@@ -222,37 +162,23 @@ def download_selected_tracks(website_url, track_indices, output_dir=None):
                 return
             
             os.makedirs(output_dir, exist_ok=True)
+
+            if len(track_names) != len(track_url_names) or len(track_url_names) != len(track_codes):
+                send_message("error", "Track names, track URLs, and track codes do not match")
+                return
+
+            totalIterations = len(track_names)
             
-            total_tracks = len(track_url_names)
-            finalFoundFiles = 0
-            used_codes = set()
-            
-            send_message("start", {"total": total_tracks, "albumName": websiteName})
-            
-            for i, track_url_name in enumerate(track_url_names):
-                found = False
-                
-                for track_code in track_codes:
-                    if track_code in used_codes:
-                        continue
+            for index in range(totalIterations): # could be any of the three
                     
-                    finalTrackLink = download_track(websiteName, track_code, track_url_name, output_dir, track_names[i])
-                    
-                    if finalTrackLink:
-                        used_codes.add(track_code)
-                        finalFoundFiles += 1
-                        found = True
-                        send_message("progress", {
-                            "current": i + 1,
-                            "total": total_tracks,
-                            "fileName": track_url_name,
-                        })
-                        break
-                
-                if not found:
-                    send_message("warning", f"Could not find working code for '{track_url_name}'")
-            
-            send_message("complete", {"downloaded": finalFoundFiles, "total": total_tracks})
+                trackName = download_track(websiteName, track_codes[index], track_url_names[index], output_dir, track_names[index])
+
+                send_message("progress", {
+                    "current": index + 1,
+                    "total": totalIterations,
+                    "fileName": trackName,
+                })
+
         else:
             send_message("error", "Could not find eval script in page")
     else:
@@ -274,14 +200,6 @@ if __name__ == "__main__":
         info = get_album_info(url)
         if info:
             send_message("album_info", info)
-    
-    elif command == "download_all":
-        if len(sys.argv) < 3:
-            send_message("error", "No URL provided")
-            sys.exit(1)
-        url = sys.argv[2]
-        output_dir = sys.argv[3] if len(sys.argv) > 3 else None
-        download_full_album(url, output_dir)
     
     elif command == "download_selected":
         if len(sys.argv) < 4:
