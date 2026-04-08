@@ -1,55 +1,93 @@
 # Khinsider Scraper
 
-A desktop application built with Electron and Python to easily browse and download video game soundtracks.
+Desktop Electron app for browsing a Khinsider album page and downloading selected tracks through a Python scraper.
 
-## Features
+## Stack
 
-- **Easy Search**: Paste a Khinsider album URL to verify and retrieve the tracklist.
-- **Selective Downloading**: Choose specific tracks or select the entire album to download.
-- **Progress Tracking**: Visual progress bar and status updates during downloads.
-- **Clean UI**: A modern, dark-themed interface for managing your VGM collection.
+- Electron for the desktop shell and UI
+- Node.js / npm for app startup
+- Python 3 for scraping and downloads
+- `requests` and `beautifulsoup4` for the scraper
 
-## Prerequisites
+## Project Layout
 
-Before running the application, ensure you have the following installed:
+- `index.html` - main app window
+- `src/renderer/main.js` - Electron main process and IPC handlers
+- `src/renderer/preload.js` - safe renderer API bridge
+- `src/renderer/buttonFunctions.js` - UI behavior
+- `src/python/scraper.py` - album parsing and file download logic
 
-- [Node.js](https://nodejs.org/) (includes npm)
-- [Python 3.x](https://www.python.org/downloads/)
+## Requirements
 
-## Installation
+Install these before running the app:
 
-1.  **Install Node dependencies**
-    Navigate to the project directory and run:
-    ```bash
-    npm install
-    ```
+- Node.js
+- Python 3
 
-2.  **Install Python dependencies**
-    The underlying scraper requires `requests` and `beautifulsoup4`:
-    ```bash
-    pip install requests beautifulsoup4
-    ```
+The app launches with npm, but downloads and album lookups depend on Python being available on your system `PATH`.
 
-## Usage
+## Install
 
-1.  Start the application:
-    ```bash
-    npm start
-    ```
+Install Node dependencies:
 
-2.  Enter a valid album URL from Khinsider (e.g., `https://downloads.khinsider.com/game-soundtracks/album/example-album`).
-3.  Click **Search** to load the available tracks.
-4.  Select the tracks you wish to download using the checkboxes.
-5.  Click **Download Selected**. The files will be downloaded to a local folder named after the album.
+```powershell
+npm install
+```
 
-## Project Structure
+Install Python packages:
 
-- **src/renderer/**: Contains the Electron frontend logic (UI, styles, and button handlers).
-- **src/python/**: Contains `scraper.py`, the core logic script handles web scraping and file downloading.
-- **index.html**: The main application window layout.
+```powershell
+py -m pip install requests beautifulsoup4
+```
 
-## Technologies
+If `py` is not available, use:
 
-- **Electron**: Cross-platform desktop framework.
-- **Python**: Used for the backend scraping logic.
-- **BeautifulSoup4**: Used for parsing HTML content.
+```powershell
+python -m pip install requests beautifulsoup4
+```
+
+## Run
+
+Start the Electron app from the project root:
+
+```powershell
+npm start
+```
+
+## How It Works
+
+1. Paste a Khinsider album URL into the app.
+2. The Electron main process calls `scraper.py get_info <url>`.
+3. The Python script parses the album page and returns the track list over stdout as JSON.
+4. When you download tracks, Electron calls `scraper.py download_selected <url> <indices> [outputDir]`.
+5. The Python script downloads files into the folder you selected in the directory picker.
+
+## Important Notes
+
+- `package.json` does not replace Python. This app depends on a real Python installation because Electron spawns `scraper.py` directly.
+- On Windows, `pip` may not be available as a standalone command in PowerShell. Use `py -m pip ...` or `python -m pip ...`.
+- The app currently expects Python to be callable as `python` on Windows.
+
+## Troubleshooting
+
+### `pip` is not recognized
+
+Use:
+
+```powershell
+py -m pip install requests beautifulsoup4
+```
+
+or:
+
+```powershell
+python -m pip install requests beautifulsoup4
+```
+
+If neither works, Python is not installed or not on `PATH`.
+
+### The app starts but downloads fail
+
+Check the terminal running Electron. The app logs Python stdout and stderr there.
+
+## WARNING: This is a work in progress! Some older songs will not download (will download NULL).
