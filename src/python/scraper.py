@@ -13,6 +13,10 @@ def send_message(message_type, data):
     print(message, flush=True)
     sys.stdout.flush()
 
+def debug_log(message):
+    """Write debug information to stderr so Electron logs it."""
+    print(f"[scraper-debug] {message}", file=sys.stderr, flush=True)
+
 def get_webpage_content(url):
     try:
         headers = {
@@ -92,19 +96,33 @@ def extract_track_codes(script_content):
     return matches[::-1]
 
 def download_track(website_name, track_code, track_name, output_dir, realFileName):
-    websiteLink = f"{linkHeader}{website_name}/{track_code}/{track_name.replace("%25", "%")}.mp3"
+    normalized_track_name = track_name.replace("%25", "%")
+    websiteLink = f"{linkHeader}{website_name}/{track_code}/{normalized_track_name}.mp3"
+    debug_log(
+        f"Attempting download: album='{website_name}', track_code='{track_code}', "
+        f"track_name='{normalized_track_name}', output_dir='{output_dir}', real_file_name='{realFileName}'"
+    )
+    debug_log(f"Resolved download URL: {websiteLink}")
     
     try:
         response = requests.get(websiteLink, timeout=30)
+        debug_log(
+            f"Response for '{realFileName}': status={response.status_code}, "
+            f"content_type='{response.headers.get('content-type')}', bytes={len(response.content)}"
+        )
         
         if response.status_code != 200:
+            send_message("warning", f"Download URL returned status {response.status_code} for {realFileName}")
             return None
         else:
             filepath = os.path.join(output_dir, f"{realFileName}.mp3")
+            debug_log(f"Writing file to: {filepath}")
             with open(filepath, "wb") as f:
                 f.write(response.content)
+            debug_log(f"Successfully wrote file: {filepath}")
             return f"{realFileName}.mp3"
     except Exception as e:
+        debug_log(f"Exception while downloading '{realFileName}': {e}")
         send_message("warning", f"Error downloading {realFileName}: {e}")
         return None
 
@@ -135,9 +153,14 @@ def download_selected_tracks(website_url, track_indices, output_dir=None):
     """Download only selected tracks by their indices"""
     html_content = get_webpage_content(website_url)
     websiteName = website_url.replace("https://downloads.khinsider.com/game-soundtracks/album/", "")
+    debug_log(
+        f"download_selected_tracks called with url='{website_url}', website_name='{websiteName}', "
+        f"track_indices={track_indices}, output_dir='{output_dir}'"
+    )
     
     if output_dir is None:
         output_dir = websiteName
+        debug_log(f"No output_dir supplied. Using default: {output_dir}")
     
     if html_content:
         script_elements = extract_scripts(html_content)
@@ -147,6 +170,10 @@ def download_selected_tracks(website_url, track_indices, output_dir=None):
             track_codes = extract_track_codes(eval_script)
             all_track_url_names = extract_url_track_names(website_url)
             all_track_names = extract_track_names(website_url)
+            debug_log(
+                f"Extracted counts: track_codes={len(track_codes)}, "
+                f"all_track_url_names={len(all_track_url_names)}, all_track_names={len(all_track_names)}"
+            )
 
             
             if not track_codes:
@@ -156,20 +183,32 @@ def download_selected_tracks(website_url, track_indices, output_dir=None):
             # Filter to only selected tracks
             track_url_names = [all_track_url_names[i] for i in track_indices if i < len(all_track_url_names)]
             track_names = [all_track_names[i] for i in track_indices if i < len(all_track_names)]
+            debug_log(
+                f"Filtered tracks: selected_url_names={track_url_names}, selected_track_names={track_names}"
+            )
             
             if not track_url_names:
                 send_message("error", "No valid tracks selected")
                 return
             
             os.makedirs(output_dir, exist_ok=True)
+            debug_log(f"Ensured output directory exists: {output_dir}")
 
             if len(track_names) != len(track_url_names) or len(track_url_names) != len(track_codes):
+                debug_log(
+                    f"Length mismatch: track_names={len(track_names)}, "
+                    f"track_url_names={len(track_url_names)}, track_codes={len(track_codes)}"
+                )
                 send_message("error", "Track names, track URLs, and track codes do not match")
                 return
 
             totalIterations = len(track_names)
             
             for index in range(totalIterations): # could be any of the three
+                debug_log(
+                    f"Downloading index={index}, display_name='{track_names[index]}', "
+                    f"url_name='{track_url_names[index]}', track_code='{track_codes[index]}'"
+                )
                     
                 trackName = download_track(websiteName, track_codes[index], track_url_names[index], output_dir, track_names[index])
 

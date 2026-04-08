@@ -101,6 +101,8 @@ ipcMain.handle('download-tracks', async (event, { url, trackIndices, outputDir }
         let dataBuffer = '';
         let stderrBuffer = '';
         let hasStarted = false;
+        let hasCompleted = false;
+        let lastProgress = null;
         
         pythonProcess.stdout.on('data', (data) => {
             dataBuffer += data.toString();
@@ -116,11 +118,14 @@ ipcMain.handle('download-tracks', async (event, { url, trackIndices, outputDir }
                     
                     // Send progress updates to renderer
                     if (message.type === 'progress') {
+                        hasStarted = true;
+                        lastProgress = message.data;
                         event.sender.send('download-progress', message.data);
                     } else if (message.type === 'start') {
                         hasStarted = true;
                         event.sender.send('download-start', message.data);
                     } else if (message.type === 'complete') {
+                        hasCompleted = true;
                         resolve(message.data);
                     } else if (message.type === 'error') {
                         reject(new Error(message.data));
@@ -149,6 +154,11 @@ ipcMain.handle('download-tracks', async (event, { url, trackIndices, outputDir }
             
             if (code !== 0 && code !== null) {
                 reject(new Error(`Python process exited with code ${code}. Check console for details.`));
+            } else if (hasStarted && !hasCompleted) {
+                resolve({
+                    downloaded: lastProgress?.current ?? 0,
+                    total: lastProgress?.total ?? 0,
+                });
             } else if (!hasStarted) {
                 reject(new Error('Download did not start. Check if Python dependencies are installed.'));
             }
